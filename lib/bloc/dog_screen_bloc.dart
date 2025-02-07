@@ -24,4 +24,6 @@ class DogScreenBloc extends Bloc<DogEvent, DogScreenState> {
       emit(DogScreenError('Failed to fetch dogs: ${e.toString()}'));
     }
   }
+
+  
 }

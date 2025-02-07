@@ -1,9 +1,9 @@
-
 import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:tot_app/bloc/dog_screen_bloc.dart';
+import 'package:tot_app/constants/theme/app_theme.dart';
 import 'package:tot_app/data/repositories/dog_repo.dart';
 import 'package:tot_app/presentation/dog_home_screen.dart';
 
@@ -13,14 +13,14 @@ void main() {
   runApp(const MyApp());
 }
 
- class MyHttpOverrides extends HttpOverrides{
+class MyHttpOverrides extends HttpOverrides {
   @override
-  HttpClient createHttpClient(SecurityContext? context){
+  HttpClient createHttpClient(SecurityContext? context) {
     return super.createHttpClient(context)
-      ..badCertificateCallback = (X509Certificate cert, String host, int port)=> true;
+      ..badCertificateCallback =
+          (X509Certificate cert, String host, int port) => true;
   }
 }
-
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -31,10 +31,7 @@ class MyApp extends StatelessWidget {
       create: (context) => DogScreenBloc(dogRepo: DogRepo()),
       child: MaterialApp(
           title: 'TOT APP',
-          theme: ThemeData(
-            colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-            useMaterial3: true,
-          ),
+          theme: AppTheme.lightTheme,
           home: const DogHomeScreen()),
     );
   }
