@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:tot_app/data/model/dog_model.dart';
-import 'package:tot_app/services/api_services.dart';
 
 class DogRepo {
   Future<List<DogModel>> getDogs({

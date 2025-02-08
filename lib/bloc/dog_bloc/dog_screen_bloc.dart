@@ -1,6 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:tot_app/bloc/dog_screen_event.dart';
-import 'package:tot_app/bloc/dog_screen_state.dart';
+import 'package:tot_app/bloc/dog_bloc/dog_screen_event.dart';
+import 'package:tot_app/bloc/dog_bloc/dog_screen_state.dart';
 import 'package:tot_app/data/model/dog_model.dart';
 import 'package:tot_app/data/repositories/dog_repo.dart';
 
