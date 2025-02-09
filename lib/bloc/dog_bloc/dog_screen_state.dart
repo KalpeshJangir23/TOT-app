@@ -8,7 +8,9 @@ final class DogScreenLoading extends DogScreenState {}
 
 final class DogScreenLoaded extends DogScreenState {
   final List<DogModel> dog_data;
-  DogScreenLoaded(this.dog_data);
+  final List<DogModel> savedDogs;
+
+  DogScreenLoaded(this.dog_data, {this.savedDogs = const []});
 }
 
 final class DogScreenError extends DogScreenState {

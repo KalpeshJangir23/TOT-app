@@ -19,22 +19,53 @@ class _DogHomeScreenState extends State<DogHomeScreen> {
   String searchQuery = '';
   List<DogModel> filteredDogs = [];
   final PageController _pageController = PageController(viewportFraction: 0.9);
+  late DogScreenBloc _dogBloc;
+
+  @override
+  void initState() {
+    super.initState();
+    _dogBloc = DogScreenBloc(dogRepo: DogRepo())
+      ..add(FetchDogs())
+      ..add(LoadSavedDogs()); 
+  }
+
+  @override
+  void dispose() {
+    _dogBloc.close();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) => DogScreenBloc(dogRepo: DogRepo())..add(FetchDogs()),
+      create: (context) => _dogBloc,
       child: Scaffold(
         appBar: AppBar(
           title: const Text('TOT app 🐶'),
           actions: [
-            IconButton(
-              icon: const Icon(Icons.bookmark_border),
-              onPressed: () {
-                // Handle saved
-                Navigator.of(context).push(MaterialPageRoute(
-                  builder: (context) => const SaveScreen(),
-                ));
+            BlocBuilder<DogScreenBloc, DogScreenState>(
+              builder: (context, state) {
+                if (state is DogScreenLoaded) {
+                  return Badge(
+                    label: Text(state.savedDogs.length.toString()),
+                    child: IconButton(
+                      icon: const Icon(Icons.bookmark_border),
+                      onPressed: () {
+                        Navigator.of(context).push(MaterialPageRoute(
+                          builder: (context) => const SaveScreen(),
+                        ));
+                      },
+                    ),
+                  );
+                }
+                return IconButton(
+                  icon: const Icon(Icons.bookmark_border),
+                  onPressed: () {
+                    Navigator.of(context).push(MaterialPageRoute(
+                      builder: (context) => const SaveScreen(),
+                    ));
+                  },
+                );
               },
             ),
           ],
@@ -94,12 +125,29 @@ class _DogHomeScreenState extends State<DogHomeScreen> {
                             controller: _pageController,
                             itemCount: filteredDogs.length,
                             itemBuilder: (context, index) {
-                              return DogCard(dog: filteredDogs[index]);
+                              final dog = filteredDogs[index];
+                              final isSaved = state.savedDogs
+                                  .any((savedDog) => savedDog.id == dog.id);
+
+                              return DogCard(
+                                dog: dog,
+                                isSaved: isSaved,
+                                onSavePressed: () {
+                                  if (isSaved) {
+                                    context.read<DogScreenBloc>().add(
+                                          RemoveDogDetails(dog.id),
+                                        );
+                                  } else {
+                                    context.read<DogScreenBloc>().add(
+                                          SaveDogDetails(dog),
+                                        );
+                                  }
+                                },
+                              );
                             },
                           );
                   }
-                  return const SizedBox
-                      .shrink(); // Return an empty widget if state is not handled
+                  return const SizedBox.shrink();
                 },
               ),
             ),

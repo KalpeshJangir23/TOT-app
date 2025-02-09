@@ -24,9 +24,15 @@ class SearchDogs extends DogEvent {
   });
 }
 
+// In dog_screen_event.dart
 final class SaveDogDetails extends DogEvent {
-  final List<DogModel> dog;
+  final DogModel dog; // Changed from List<DogModel>
   SaveDogDetails(this.dog);
 }
+final class RemoveDogDetails extends DogEvent {
+  final int dogId;
+  RemoveDogDetails(this.dogId);
+}
+
 
 final class LoadSavedDogs extends DogEvent {}

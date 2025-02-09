@@ -2,17 +2,29 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:tot_app/bloc/dog_bloc/dog_screen_bloc.dart';
+import 'package:tot_app/bloc/dog_bloc/dog_screen_event.dart';
 import 'package:tot_app/bloc/map_bloc/bloc_map.dart';
 import 'package:tot_app/constants/theme/app_theme.dart';
+import 'package:tot_app/data/model/dog_model.dart';
 import 'package:tot_app/data/repositories/dog_repo.dart';
 import 'package:tot_app/presentation/mapScreen.dart';
 import 'package:tot_app/presentation/dog_home_screen.dart';
 import 'package:geolocator/geolocator.dart';
 
+import 'package:hive_flutter/hive_flutter.dart'; // Change this import
 
-void main() {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // var directory = await getApplicationDocumentsDirectory();
+  // Hive.init(directory.path);
+  // await Hive.initFlutter();
+  // Hive.registerAdapter(DogModelAdapter());
+  // await Hive.openBox<DogModel>("saved_dogs");
+  await Hive.initFlutter();
+  Hive.registerAdapter(DogModelAdapter());
+
   HttpOverrides.global = MyHttpOverrides();
   runApp(const MyApp());
 }
@@ -27,14 +39,19 @@ class MyHttpOverrides extends HttpOverrides {
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  const MyApp({
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context) {
     return MultiBlocProvider(
       providers: [
         BlocProvider<DogScreenBloc>(
-          create: (context) => DogScreenBloc(dogRepo: DogRepo()),
+          create: (context) =>
+              DogScreenBloc(dogRepo: DogRepo()) // Use the passed in dogRepo
+                ..add(FetchDogs())
+                ..add(LoadSavedDogs()),
         ),
         BlocProvider<LocationBloc>(
           create: (context) => LocationBloc(),
@@ -59,7 +76,8 @@ class LocationPermissionHandler {
     if (!serviceEnabled) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Location services are disabled. Please enable the services'),
+          content: Text(
+              'Location services are disabled. Please enable the services'),
         ),
       );
       return false;
@@ -96,7 +114,6 @@ class LocationPermissionHandler {
   }
 }
 
-// Home Screen with Navigation
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -106,6 +123,13 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    // Ensure saved dogs are loaded when the app starts
+    context.read<DogScreenBloc>().add(LoadSavedDogs());
+  }
 
   @override
   Widget build(BuildContext context) {

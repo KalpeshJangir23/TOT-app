@@ -5,7 +5,14 @@ import 'package:tot_app/data/model/dog_model.dart';
 
 class DogCard extends StatefulWidget {
   final DogModel dog;
-  const DogCard({super.key, required this.dog});
+  final bool isSaved;
+  final VoidCallback onSavePressed;
+  const DogCard({
+    super.key,
+    required this.dog,
+    required this.isSaved,
+    required this.onSavePressed,
+  });
 
   @override
   State<DogCard> createState() => _DogCardState();
@@ -30,7 +37,8 @@ class _DogCardState extends State<DogCard> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             ClipRRect(
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(15)),
+              borderRadius:
+                  const BorderRadius.vertical(top: Radius.circular(15)),
               child: SizedBox(
                 height: 250, // Reduced height
                 width: double.infinity,
@@ -58,7 +66,9 @@ class _DogCardState extends State<DogCard> {
                       Row(
                         children: [
                           _ActionButton(
-                            icon: isLiked ? Icons.favorite : Icons.favorite_border,
+                            icon: isLiked
+                                ? Icons.favorite
+                                : Icons.favorite_border,
                             color: isLiked
                                 ? AppTheme.secondaryColor
                                 : AppTheme.textSecondaryColor,
@@ -66,11 +76,13 @@ class _DogCardState extends State<DogCard> {
                           ),
                           const SizedBox(width: 8),
                           _ActionButton(
-                            icon: isSaved ? Icons.bookmark : Icons.bookmark_border,
+                            icon: isSaved
+                                ? Icons.bookmark
+                                : Icons.bookmark_border,
                             color: isSaved
                                 ? AppTheme.secondaryColor
                                 : AppTheme.textSecondaryColor,
-                            onPressed: () => setState(() => isSaved = !isSaved),
+                            onPressed: widget.onSavePressed,
                           ),
                         ],
                       ),
@@ -87,7 +99,8 @@ class _DogCardState extends State<DogCard> {
                     runSpacing: 8,
                     children: [
                       _InfoChip(icon: Icons.straighten, value: widget.dog.size),
-                      _InfoChip(icon: Icons.schedule, value: widget.dog.lifespan),
+                      _InfoChip(
+                          icon: Icons.schedule, value: widget.dog.lifespan),
                       _InfoChip(icon: Icons.place, value: widget.dog.origin),
                     ],
                   ),

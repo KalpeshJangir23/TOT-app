@@ -1,8 +1,24 @@
 import 'dart:convert';
+import 'package:hive/hive.dart';
 import 'package:http/http.dart' as http;
 import 'package:tot_app/data/model/dog_model.dart';
 
 class DogRepo {
+  static const String savedDogsBoxName = 'saved_dogs';
+  late Box<DogModel> _savedDogsBox;
+
+  DogRepo() {
+    _initHive();
+  }
+
+  Future<void> _initHive() async {
+    if (!Hive.isBoxOpen(savedDogsBoxName)) {
+      _savedDogsBox = await Hive.openBox<DogModel>(savedDogsBoxName);
+    } else {
+      _savedDogsBox = Hive.box<DogModel>(savedDogsBoxName);
+    }
+  }
+
   Future<List<DogModel>> getDogs({
     String? name,
     String? breedGroup,
@@ -39,7 +55,7 @@ class DogRepo {
                   lifespan: dogJson['lifespan'],
                   origin: dogJson['origin'],
                   temperament: dogJson['temperament'],
-                  colors: List<dynamic>.from(dogJson['colors']),
+                  colors: List<String>.from(dogJson['colors']),
                   description: dogJson['description'],
                   image: dogJson['image'],
                 ))
@@ -50,5 +66,22 @@ class DogRepo {
     } catch (e) {
       throw Exception('Failed to fetch dogs: $e');
     }
+  }
+
+  Future<void> saveDog(DogModel dog) async {
+    await _savedDogsBox.put(dog.id, dog.copyWith(savedAt: DateTime.now()));
+  }
+
+  Future<void> removeDog(int dogId) async {
+    await _savedDogsBox.delete(dogId);
+  }
+
+  List<DogModel> getSavedDogs() {
+    return _savedDogsBox.values.toList()
+      ..sort((a, b) => b.savedAt.compareTo(a.savedAt));
+  }
+
+  bool isDogSaved(int dogId) {
+    return _savedDogsBox.containsKey(dogId);
   }
 }
