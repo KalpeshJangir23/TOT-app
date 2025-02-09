@@ -8,27 +8,25 @@ import 'package:tot_app/bloc/map_bloc/bloc_map.dart';
 import 'package:tot_app/constants/theme/app_theme.dart';
 import 'package:tot_app/data/model/dog_model.dart';
 import 'package:tot_app/data/repositories/dog_repo.dart';
-import 'package:tot_app/presentation/mapScreen.dart';
+import 'package:tot_app/data/repositories/map_repo.dart';
+import 'package:tot_app/data/repositories/tryMap.dart';
 import 'package:tot_app/presentation/dog_home_screen.dart';
 import 'package:geolocator/geolocator.dart';
 
-import 'package:hive_flutter/hive_flutter.dart'; // Change this import
+import 'package:hive_flutter/hive_flutter.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize Hive
   await Hive.initFlutter();
   Hive.registerAdapter(DogModelAdapter());
   await Hive.openBox<DogModel>('savedDogs');
 
-  // Handle SSL certificate issues
   HttpOverrides.global = MyHttpOverrides();
 
   runApp(const MyApp());
 }
 
-// Add this class to handle SSL certificate issues
 class MyHttpOverrides extends HttpOverrides {
   @override
   HttpClient createHttpClient(SecurityContext? context) {
@@ -50,8 +48,11 @@ class MyApp extends StatelessWidget {
             ..add(FetchDogs())
             ..add(LoadSavedDogs()),
         ),
-        BlocProvider<LocationBloc>(
-          create: (context) => LocationBloc(),
+        BlocProvider<RideBloc>(
+          create: (context) => RideBloc(
+            routeRepository: RouteRepository(),
+            locationRepository: LocationRepository(),
+          ),
         ),
       ],
       child: MaterialApp(
@@ -68,7 +69,6 @@ class LocationPermissionHandler {
     bool serviceEnabled;
     LocationPermission permission;
 
-    // Test if location services are enabled
     serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -80,10 +80,8 @@ class LocationPermissionHandler {
       return false;
     }
 
-    // Check location permission status
     permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
-      // Request location permission
       permission = await Geolocator.requestPermission();
       if (permission == LocationPermission.denied) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -95,7 +93,6 @@ class LocationPermissionHandler {
       }
     }
 
-    // Handle permanently denied permissions
     if (permission == LocationPermission.deniedForever) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -124,7 +121,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    // Ensure saved dogs are loaded when the app starts
+
     context.read<DogScreenBloc>().add(LoadSavedDogs());
   }
 
@@ -135,7 +132,7 @@ class _HomeScreenState extends State<HomeScreen> {
         index: _selectedIndex,
         children: const [
           DogHomeScreen(),
-          LocationTrackingScreen(),
+          TrackingScreen(),
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(

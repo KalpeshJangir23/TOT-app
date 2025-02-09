@@ -17,7 +17,7 @@ class _SaveScreenState extends State<SaveScreen> {
   @override
   void initState() {
     super.initState();
-    // Refresh saved dogs when screen opens
+    
     context.read<DogScreenBloc>().add(LoadSavedDogs());
   }
 

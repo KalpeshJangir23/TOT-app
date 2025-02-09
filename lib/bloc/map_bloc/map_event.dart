@@ -1,22 +1,12 @@
-import 'package:flutter/material.dart';
-import 'package:latlong2/latlong.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 
-abstract class LocationEvent {}
+abstract class RideEvent {}
 
-class StartTracking extends LocationEvent {
-  final BuildContext context;
-  StartTracking(this.context);
+class StartRide extends RideEvent {}
+
+class StopRide extends RideEvent {}
+
+class MapCreated extends RideEvent {
+  final GoogleMapController controller;
+  MapCreated(this.controller);
 }
-
-class UpdateCurrentPosition extends LocationEvent {
-  final LatLng position;
-  UpdateCurrentPosition(this.position);
-}
-
-class StopTracking extends LocationEvent {}
-
-class ResetTracking extends LocationEvent {}
-
-class PauseTracking extends LocationEvent {}
-
-class ResumeTracking extends LocationEvent {}

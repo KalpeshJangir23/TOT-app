@@ -33,14 +33,14 @@ class _DogCardState extends State<DogCard> {
         ),
         elevation: 4,
         child: Column(
-          mainAxisSize: MainAxisSize.min, // Add this to prevent expansion
+          mainAxisSize: MainAxisSize.min, 
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             ClipRRect(
               borderRadius:
                   const BorderRadius.vertical(top: Radius.circular(15)),
               child: SizedBox(
-                height: 250, // Reduced height
+                height: 250, 
                 width: double.infinity,
                 child: Image.asset(
                   'assets/images/dogs.jpg',

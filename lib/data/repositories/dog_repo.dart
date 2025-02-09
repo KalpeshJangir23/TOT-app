@@ -30,10 +30,7 @@ class DogRepo {
       final uri = Uri.parse('https://freetestapi.com/api/v1/dogs');
       final response = await http.get(
         uri,
-        headers: {
-          'Accept': 'application/json',
-          'User-Agent': 'Mozilla/5.0', // Add user agent to prevent 403
-        },
+       
       );
 
       if (response.statusCode == 200) {

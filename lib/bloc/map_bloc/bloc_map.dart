@@ -1,197 +1,139 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:latlong2/latlong.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:tot_app/bloc/map_bloc/map_event.dart';
 import 'package:tot_app/bloc/map_bloc/map_state.dart';
 import 'package:tot_app/data/repositories/map_repo.dart';
 
-class LocationBloc extends Bloc<LocationEvent, LocationState> {
-  final OsrmRepository _repository;
-  StreamSubscription<Position>? _positionSubscription;
-  Timer? _updateTimer;
-  DateTime? _startTime;
+class RideBloc extends Bloc<RideEvent, RideState> {
+  final RouteRepository routeRepository;
+  final LocationRepository locationRepository;
 
-  LocationBloc({OsrmRepository? repository})
-      : _repository = repository ?? OsrmRepository(),
-        super(LocationState()) {
-    on<StartTracking>(_onStartTracking);
-    on<UpdateCurrentPosition>(_onUpdateCurrentPosition);
-    on<StopTracking>(_onStopTracking);
-    on<ResetTracking>(_onResetTracking);
-    on<PauseTracking>(_onPauseTracking);
-    on<ResumeTracking>(_onResumeTracking);
+  GoogleMapController? _mapController;
+  StreamSubscription<Position>?
+      _locationSubscription; // Changed type to Position
+  DateTime? _startTime;
+  double _totalDistance = 0.0;
+  LatLng? _startPosition;
+  LatLng? _currentPosition;
+
+  RideBloc({required this.routeRepository, required this.locationRepository})
+      : super(RideInitial()) {
+    on<StartRide>(_onStartRide);
+    on<StopRide>(_onStopRide);
+    on<MapCreated>(_onMapCreated);
   }
 
-  Future<void> _onStartTracking(
-      StartTracking event, Emitter<LocationState> emit) async {
+  void _onMapCreated(MapCreated event, Emitter<RideState> emit) {
     try {
-      // Check and request location permissions
-      LocationPermission permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-      }
+      _mapController = event.controller;
+      _initializeCurrentLocation();
+    } catch (e) {
+      print('Error setting map controller: $e');
+    }
+  }
 
-      if (permission != LocationPermission.whileInUse &&
-          permission != LocationPermission.always) {
-        ScaffoldMessenger.of(event.context).showSnackBar(
-          const SnackBar(
-            content: Text('Location permissions are required!'),
-            backgroundColor: Colors.red,
-          ),
-        );
-        return;
-      }
+  Future<void> _initializeCurrentLocation() async {
+    try {
+      final position = await Geolocator.getCurrentPosition();
+      _currentPosition = LatLng(position.latitude, position.longitude);
+      _updateCamera(_currentPosition!);
+    } catch (e) {
+      print('Error getting initial location: $e');
+    }
+  }
 
-      // Get initial position
-      final position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.best,
-      );
-      final currentPosition = LatLng(position.latitude, position.longitude);
+  void _updateCamera(LatLng position) {
+    _mapController?.animateCamera(CameraUpdate.newLatLng(position));
+  }
 
-      // Set start time
+  final List<LatLng> _coordinates = [];
+
+  Future<void> _onStartRide(StartRide event, Emitter<RideState> emit) async {
+    try {
+      emit(RidePreparation());
+      await Future.delayed(const Duration(seconds: 5));
+
       _startTime = DateTime.now();
+      _coordinates.clear();
+      _totalDistance = 0.0;
+      _startPosition = _currentPosition;
 
-      // Update state with initial position
-      emit(state.copyWith(
-        currentPosition: currentPosition,
-        source: currentPosition,
-        routeCoordinates: [currentPosition],
-        isTracking: true,
-        isPaused: false,
-        error: null,
-        startTime: _startTime,
-      ));
+      if (_currentPosition != null) {
+        _coordinates.add(_currentPosition!);
+      }
 
-      // Configure location settings
-      const locationSettings = LocationSettings(
-        accuracy: LocationAccuracy.best,
-        distanceFilter: 5, // Update every 5 meters
-        timeLimit: Duration(seconds: 30), // Timeout for getting location
-      );
-
-      // Start location stream
-      await _positionSubscription?.cancel();
-      _positionSubscription = Geolocator.getPositionStream(
-        locationSettings: locationSettings,
+      _locationSubscription = Geolocator.getPositionStream(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+          distanceFilter: 10,
+        ),
       ).listen(
         (Position position) {
-          add(UpdateCurrentPosition(LatLng(position.latitude, position.longitude)));
+          final latLng = LatLng(position.latitude, position.longitude);
+          _currentPosition = latLng;
+          if (latLng != null) {
+            _coordinates.add(latLng);
+            _updateRoute();
+            _updateCamera(latLng);
+          }
         },
         onError: (error) {
-          print('Location stream error: $error');
-          emit(state.copyWith(
-            error: 'Error tracking location. Please try again.',
-            isTracking: false,
-          ));
-          add(StopTracking());
+          emit(RideError(error.toString()));
+          _locationSubscription?.cancel();
         },
-        cancelOnError: true,
       );
 
-      // Start periodic updates for duration
-      _updateTimer?.cancel();
-      _updateTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-        if (state.isTracking && !state.isPaused) {
-          final currentDuration = DateTime.now().difference(_startTime!);
-          emit(state.copyWith(duration: currentDuration));
-        }
-      });
-
-    } catch (e) {
-      print('Error starting tracking: $e');
-      emit(state.copyWith(
-        error: 'Failed to start tracking. Please check your location settings.',
-        isTracking: false,
+      emit(RideInProgress(
+        polyline: const Polyline(polylineId: PolylineId('route')),
+        duration: Duration.zero,
+        distance: 0.0,
+        startPosition: _startPosition,
+        currentPosition: _currentPosition,
       ));
+    } catch (e) {
+      emit(RideError(e.toString()));
     }
   }
 
-  void _onUpdateCurrentPosition(
-      UpdateCurrentPosition event, Emitter<LocationState> emit) {
-    if (!state.isTracking || state.isPaused) return;
+  Future<void> _updateRoute() async {
+    if (_coordinates.length < 2) return;
 
     try {
-      // Calculate distance from last point
-      final lastPoint = state.routeCoordinates.last;
-      final distance = const Distance().as(
-        LengthUnit.Kilometer,
-        lastPoint,
-        event.position,
-      );
+      final route = await routeRepository.getRoute(_coordinates.toList());
+      final distance = _totalDistance + route.distance;
 
-      // Only update if moved more than 5 meters to reduce noise
-      if (distance > 0.005) {
-        emit(state.copyWith(
-          currentPosition: event.position,
-          routeCoordinates: [...state.routeCoordinates, event.position],
-          error: null,
-        ));
-      }
-    } catch (e) {
-      print('Error updating position: $e');
-    }
-  }
-
-  Future<void> _onStopTracking(
-      StopTracking event, Emitter<LocationState> emit) async {
-    try {
-      await _positionSubscription?.cancel();
-      _positionSubscription = null;
-      _updateTimer?.cancel();
-      _updateTimer = null;
-
-      if (state.source != null && state.currentPosition != null) {
-        final journey = await _repository.getRouteDetails(
-          state.source!,
-          state.currentPosition!,
-        );
-
-        emit(state.copyWith(
-          destination: state.currentPosition,
-          journey: journey,
-          isTracking: false,
-          isPaused: false,
-          error: null,
-        ));
-      } else {
-        emit(state.copyWith(
-          isTracking: false,
-          isPaused: false,
-        ));
-      }
-    } catch (e) {
-      print('Error stopping tracking: $e');
-      emit(state.copyWith(
-        error: 'Error saving journey details.',
-        isTracking: false,
-        isPaused: false,
+      emit(RideInProgress(
+        polyline: Polyline(
+          polylineId: const PolylineId('route'),
+          points: route.points,
+          color: Colors.blue,
+          width: 5,
+        ),
+        duration: DateTime.now().difference(_startTime!),
+        distance: distance,
+        startPosition: _startPosition,
+        currentPosition: _currentPosition,
       ));
+    } catch (e) {
+      emit(RideError('Failed to update route: ${e.toString()}'));
     }
   }
 
-  void _onResetTracking(ResetTracking event, Emitter<LocationState> emit) {
-    _positionSubscription?.cancel();
-    _updateTimer?.cancel();
-    _startTime = null;
-
-    emit(LocationState(routeCoordinates: [])); // Reset to initial state
-  }
-
-  void _onPauseTracking(PauseTracking event, Emitter<LocationState> emit) {
-    emit(state.copyWith(isPaused: true));
-  }
-
-  Future<void> _onResumeTracking(
-      ResumeTracking event, Emitter<LocationState> emit) async {
-    emit(state.copyWith(isPaused: false));
+  void _onStopRide(StopRide event, Emitter<RideState> emit) {
+    _locationSubscription?.cancel();
+    _startPosition = null;
+    _currentPosition = null;
+    emit(RideInitial());
   }
 
   @override
   Future<void> close() async {
-    await _positionSubscription?.cancel();
-    _updateTimer?.cancel();
+    await _locationSubscription?.cancel();
+    _mapController?.dispose();
     return super.close();
   }
 }

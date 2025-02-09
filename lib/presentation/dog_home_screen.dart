@@ -5,7 +5,6 @@ import 'package:tot_app/bloc/dog_bloc/dog_screen_event.dart';
 import 'package:tot_app/bloc/dog_bloc/dog_screen_state.dart';
 import 'package:tot_app/constants/theme/app_theme.dart';
 import 'package:tot_app/data/model/dog_model.dart';
-import 'package:tot_app/data/repositories/dog_repo.dart';
 import 'package:tot_app/presentation/save_screen.dart';
 import 'package:tot_app/presentation/widgets/dog_card_widget.dart';
 
@@ -24,13 +23,13 @@ class _DogHomeScreenState extends State<DogHomeScreen> {
   @override
   void initState() {
     super.initState();
-    // Fetch both dogs and saved dogs when screen initializes
+    
     _fetchData();
   }
 
   void _fetchData() {
     final bloc = context.read<DogScreenBloc>();
-    // Only fetch if we don't have data
+    
     if (bloc.state is! DogScreenLoaded ||
         (bloc.state is DogScreenLoaded &&
             (bloc.state as DogScreenLoaded).dog_data.isEmpty)) {
@@ -133,7 +132,7 @@ class _DogHomeScreenState extends State<DogHomeScreen> {
 
                 if (state is DogScreenLoaded) {
                   if (state.dog_data.isEmpty) {
-                    _fetchData(); // Fetch data if empty
+                    _fetchData(); 
                     return const Center(
                       child: CircularProgressIndicator(
                         color: AppTheme.primaryColor,
@@ -141,7 +140,7 @@ class _DogHomeScreenState extends State<DogHomeScreen> {
                     );
                   }
 
-                  // Only filter if there's a search query
+                  
                   if (searchQuery.isNotEmpty) {
                     filteredDogs = state.dog_data.where((dog) {
                       final searchLower = searchQuery.toLowerCase();
