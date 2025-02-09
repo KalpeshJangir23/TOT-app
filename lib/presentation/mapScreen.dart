@@ -53,7 +53,7 @@ class _LocationTrackingScreenState extends State<LocationTrackingScreen> {
   }
 
   Future<void> _saveAndShareScreenshot(Journey journey) async {
-   
+    // Implement screenshot saving and sharing logic here
   }
 
   @override
@@ -64,13 +64,14 @@ class _LocationTrackingScreenState extends State<LocationTrackingScreen> {
         backgroundColor: AppTheme.backgroundColor,
         appBar: AppBar(
           backgroundColor: AppTheme.primaryColor,
-          title: const Text('Jogging Tracker', 
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          title: const Text('Jogging Tracker',
+              style:
+                  TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
           elevation: 0,
         ),
         body: BlocConsumer<LocationBloc, LocationState>(
           listener: (context, state) {
-            if (state.currentPosition != null) {
+            if (state.currentPosition != null && state.isTracking) {
               _mapController.move(state.currentPosition!, 18);
             }
           },
@@ -80,26 +81,28 @@ class _LocationTrackingScreenState extends State<LocationTrackingScreen> {
                 SizedBox.expand(
                   child: FlutterMap(
                     mapController: _mapController,
-                    options: const MapOptions(
-                      initialCenter: LatLng(0, 0),
+                    options: MapOptions(
+                      initialCenter:
+                          state.currentPosition ?? const LatLng(0, 0),
                       initialZoom: 18,
                     ),
                     children: [
                       TileLayer(
-                        urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                        urlTemplate:
+                            'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                         userAgentPackageName: 'com.example.tot_app',
                       ),
-                      MarkerLayer(markers: _buildMarkers(state)),
                       PolylineLayer(
                         polylines: [
                           if (state.routeCoordinates.isNotEmpty)
                             Polyline(
                               points: state.routeCoordinates,
                               color: AppTheme.accentColor,
-                              strokeWidth: 5,
+                              strokeWidth: 5.0, // Adjusted stroke width
                             ),
                         ],
                       ),
+                      MarkerLayer(markers: _buildMarkers(state)),
                     ],
                   ),
                 ),
@@ -124,7 +127,8 @@ class _LocationTrackingScreenState extends State<LocationTrackingScreen> {
                           ),
                           SizedBox(height: 10),
                           CircularProgressIndicator(
-                            valueColor: AlwaysStoppedAnimation<Color>(AppTheme.accentColor),
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                                AppTheme.accentColor),
                           ),
                         ],
                       ),
@@ -152,7 +156,8 @@ class _LocationTrackingScreenState extends State<LocationTrackingScreen> {
                       children: [
                         Column(
                           children: [
-                            const Text('Time',
+                            const Text(
+                              'Time',
                               style: TextStyle(
                                 color: AppTheme.textSecondaryColor,
                                 fontSize: 14,
@@ -171,7 +176,8 @@ class _LocationTrackingScreenState extends State<LocationTrackingScreen> {
                         if (state.journey != null)
                           Column(
                             children: [
-                              const Text('Distance',
+                              const Text(
+                                'Distance',
                                 style: TextStyle(
                                   color: AppTheme.textSecondaryColor,
                                   fontSize: 14,
@@ -203,13 +209,16 @@ class _LocationTrackingScreenState extends State<LocationTrackingScreen> {
                             setState(() => _showCountdown = true);
                             Timer(const Duration(seconds: 5), () {
                               setState(() => _showCountdown = false);
-                              context.read<LocationBloc>().add(StartTracking(context));
+                              context
+                                  .read<LocationBloc>()
+                                  .add(StartTracking(context));
                               _startTimer();
                             });
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppTheme.primaryColor,
-                            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 32, vertical: 16),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(30),
                             ),
@@ -220,7 +229,8 @@ class _LocationTrackingScreenState extends State<LocationTrackingScreen> {
                               Icon(Icons.play_arrow, color: Colors.white),
                               SizedBox(width: 8),
                               Text('Start Tracking',
-                                style: TextStyle(color: Colors.white, fontSize: 18)),
+                                  style: TextStyle(
+                                      color: Colors.white, fontSize: 18)),
                             ],
                           ),
                         ),
@@ -231,12 +241,15 @@ class _LocationTrackingScreenState extends State<LocationTrackingScreen> {
                             ElevatedButton(
                               onPressed: () {
                                 _stopTimer();
-                                context.read<LocationBloc>().add(StopTracking());
+                                context
+                                    .read<LocationBloc>()
+                                    .add(StopTracking());
                                 showDialog(
                                   context: context,
                                   builder: (context) => AlertDialog(
                                     title: const Text('Save Journey'),
-                                    content: const Text('Would you like to save this journey?'),
+                                    content: const Text(
+                                        'Would you like to save this journey?'),
                                     actions: [
                                       TextButton(
                                         onPressed: () => Navigator.pop(context),
@@ -246,7 +259,8 @@ class _LocationTrackingScreenState extends State<LocationTrackingScreen> {
                                         onPressed: () {
                                           Navigator.pop(context);
                                           if (state.journey != null) {
-                                            _saveAndShareScreenshot(state.journey!);
+                                            _saveAndShareScreenshot(
+                                                state.journey!);
                                           }
                                         },
                                         child: const Text('Yes'),
@@ -257,7 +271,8 @@ class _LocationTrackingScreenState extends State<LocationTrackingScreen> {
                               },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.red,
-                                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 32, vertical: 16),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(30),
                                 ),
@@ -268,21 +283,25 @@ class _LocationTrackingScreenState extends State<LocationTrackingScreen> {
                                   Icon(Icons.stop, color: Colors.white),
                                   SizedBox(width: 8),
                                   Text('Stop',
-                                    style: TextStyle(color: Colors.white, fontSize: 18)),
+                                      style: TextStyle(
+                                          color: Colors.white, fontSize: 18)),
                                 ],
                               ),
                             ),
                             ElevatedButton(
                               onPressed: () {
                                 _stopTimer();
-                                context.read<LocationBloc>().add(ResetTracking());
+                                context
+                                    .read<LocationBloc>()
+                                    .add(ResetTracking());
                                 setState(() {
                                   _seconds = 0;
                                 });
                               },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: AppTheme.secondaryColor,
-                                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 32, vertical: 16),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(30),
                                 ),
@@ -293,7 +312,8 @@ class _LocationTrackingScreenState extends State<LocationTrackingScreen> {
                                   Icon(Icons.refresh, color: Colors.white),
                                   SizedBox(width: 8),
                                   Text('Reset',
-                                    style: TextStyle(color: Colors.white, fontSize: 18)),
+                                      style: TextStyle(
+                                          color: Colors.white, fontSize: 18)),
                                 ],
                               ),
                             ),

@@ -2,7 +2,6 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:tot_app/bloc/dog_bloc/dog_screen_bloc.dart';
 import 'package:tot_app/bloc/dog_bloc/dog_screen_event.dart';
 import 'package:tot_app/bloc/map_bloc/bloc_map.dart';
@@ -15,20 +14,21 @@ import 'package:geolocator/geolocator.dart';
 
 import 'package:hive_flutter/hive_flutter.dart'; // Change this import
 
-Future<void> main() async {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  // var directory = await getApplicationDocumentsDirectory();
-  // Hive.init(directory.path);
-  // await Hive.initFlutter();
-  // Hive.registerAdapter(DogModelAdapter());
-  // await Hive.openBox<DogModel>("saved_dogs");
+
+  // Initialize Hive
   await Hive.initFlutter();
   Hive.registerAdapter(DogModelAdapter());
+  await Hive.openBox<DogModel>('savedDogs');
 
+  // Handle SSL certificate issues
   HttpOverrides.global = MyHttpOverrides();
+
   runApp(const MyApp());
 }
 
+// Add this class to handle SSL certificate issues
 class MyHttpOverrides extends HttpOverrides {
   @override
   HttpClient createHttpClient(SecurityContext? context) {
@@ -39,26 +39,23 @@ class MyHttpOverrides extends HttpOverrides {
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({
-    super.key,
-  });
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MultiBlocProvider(
       providers: [
         BlocProvider<DogScreenBloc>(
-          create: (context) =>
-              DogScreenBloc(dogRepo: DogRepo()) // Use the passed in dogRepo
-                ..add(FetchDogs())
-                ..add(LoadSavedDogs()),
+          create: (context) => DogScreenBloc(dogRepo: DogRepo())
+            ..add(FetchDogs())
+            ..add(LoadSavedDogs()),
         ),
         BlocProvider<LocationBloc>(
           create: (context) => LocationBloc(),
         ),
       ],
       child: MaterialApp(
-        title: 'TOT APP',
+        title: 'TOT App',
         theme: AppTheme.theme,
         home: const HomeScreen(),
       ),

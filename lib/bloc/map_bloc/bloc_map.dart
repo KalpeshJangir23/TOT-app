@@ -176,7 +176,7 @@ class LocationBloc extends Bloc<LocationEvent, LocationState> {
     _updateTimer?.cancel();
     _startTime = null;
 
-    emit(LocationState()); // Reset to initial state
+    emit(LocationState(routeCoordinates: [])); // Reset to initial state
   }
 
   void _onPauseTracking(PauseTracking event, Emitter<LocationState> emit) {

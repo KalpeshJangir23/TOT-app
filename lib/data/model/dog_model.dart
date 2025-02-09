@@ -83,7 +83,7 @@ class DogModel extends HiveObject {
     return DogModel(
       id: id ?? this.id,
       name: name ?? this.name,
-      breed_group: breedGroup ?? this.breed_group,
+      breed_group: breedGroup ?? breed_group,
       size: size ?? this.size,
       lifespan: lifespan ?? this.lifespan,
       origin: origin ?? this.origin,

@@ -76,10 +76,10 @@ class _DogCardState extends State<DogCard> {
                           ),
                           const SizedBox(width: 8),
                           _ActionButton(
-                            icon: isSaved
+                            icon: widget.isSaved
                                 ? Icons.bookmark
                                 : Icons.bookmark_border,
-                            color: isSaved
+                            color: widget.isSaved
                                 ? AppTheme.secondaryColor
                                 : AppTheme.textSecondaryColor,
                             onPressed: widget.onSavePressed,

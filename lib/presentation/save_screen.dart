@@ -3,102 +3,178 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:tot_app/bloc/dog_bloc/dog_screen_bloc.dart';
 import 'package:tot_app/bloc/dog_bloc/dog_screen_event.dart';
 import 'package:tot_app/bloc/dog_bloc/dog_screen_state.dart';
+import 'package:tot_app/constants/theme/app_theme.dart';
 import 'package:tot_app/presentation/widgets/dog_card_widget.dart';
 
-class SaveScreen extends StatelessWidget {
+class SaveScreen extends StatefulWidget {
   const SaveScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return DefaultTabController(
-      length: 2, // Number of tabs
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Save'),
-          bottom: const TabBar(
-            indicator: UnderlineTabIndicator(
-              borderSide: BorderSide(width: 20.0, color: Colors.black),
-              insets: EdgeInsets.symmetric(horizontal: 16.0),
-            ),
-            tabs: [
-              Tab(text: 'Dogs'),
-              Tab(text: 'Walks'),
-            ],
-          ),
-        ),
-        body: const TabBarView(
-          children: [
-            DogsTab(),
-            WalksTab(),
-          ],
-        ),
-      ),
-    );
+  State<SaveScreen> createState() => _SaveScreenState();
+}
+
+class _SaveScreenState extends State<SaveScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // Refresh saved dogs when screen opens
+    context.read<DogScreenBloc>().add(LoadSavedDogs());
   }
-}
 
-class DogsTab extends StatefulWidget {
-  const DogsTab({super.key});
-
-  @override
-  State<DogsTab> createState() => _DogsTabState();
-}
-
-class _DogsTabState extends State<DogsTab> {
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<DogScreenBloc, DogScreenState>(
-      builder: (context, state) {
-        if (state is DogScreenLoading) {
-          return const Center(child: CircularProgressIndicator());
-        }
-
-        if (state is DogScreenLoaded) {
-          final savedDogs = state.savedDogs;
-
-          if (savedDogs.isEmpty) {
+    return Scaffold(
+      backgroundColor: AppTheme.backgroundColor,
+      appBar: AppBar(
+        title: const Text('Saved Dogs'),
+      ),
+      body: BlocBuilder<DogScreenBloc, DogScreenState>(
+        builder: (context, state) {
+          if (state is DogScreenLoading) {
             return const Center(
-              child: Text(
-                'No saved dogs yet',
-                style: TextStyle(fontSize: 24),
+              child: CircularProgressIndicator(
+                color: AppTheme.primaryColor,
               ),
             );
           }
 
-          return ListView.builder(
-            itemCount: savedDogs.length,
-            itemBuilder: (context, index) {
-              final dog = savedDogs[index];
-              return DogCard(
-                dog: dog,
-                isSaved: true,
-                onSavePressed: () {
-                  context.read<DogScreenBloc>().add(RemoveDogDetails(dog.id));
-                },
+          if (state is DogScreenLoaded) {
+            final savedDogs = state.savedDogs;
+
+            if (savedDogs.isEmpty) {
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.pets,
+                      size: 64,
+                      color: AppTheme.primaryColor.withOpacity(0.5),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'No saved dogs yet',
+                      style:
+                          Theme.of(context).textTheme.headlineMedium?.copyWith(
+                                color: AppTheme.textSecondaryColor,
+                              ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Save some dogs to see them here!',
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                  ],
+                ),
               );
-            },
-          );
-        }
+            }
 
-        if (state is DogScreenError) {
-          return Center(child: Text(state.message));
-        }
+            return RefreshIndicator(
+              color: AppTheme.primaryColor,
+              onRefresh: () async {
+                context.read<DogScreenBloc>().add(LoadSavedDogs());
+              },
+              child: ListView.builder(
+                padding: const EdgeInsets.all(16),
+                itemCount: savedDogs.length,
+                itemBuilder: (context, index) {
+                  final dog = savedDogs[index];
+                  return Dismissible(
+                    key: Key(dog.id.toString()),
+                    background: Container(
+                      margin: const EdgeInsets.symmetric(vertical: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.red.shade400,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      alignment: Alignment.centerRight,
+                      padding: const EdgeInsets.only(right: 20),
+                      child: const Icon(
+                        Icons.delete,
+                        color: Colors.white,
+                      ),
+                    ),
+                    direction: DismissDirection.endToStart,
+                    onDismissed: (direction) {
+                      context
+                          .read<DogScreenBloc>()
+                          .add(RemoveDogDetails(dog.id));
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('${dog.name} removed from saved dogs'),
+                          backgroundColor: AppTheme.primaryColor,
+                          action: SnackBarAction(
+                            label: 'UNDO',
+                            textColor: Colors.white,
+                            onPressed: () {
+                              context
+                                  .read<DogScreenBloc>()
+                                  .add(SaveDogDetails(dog));
+                            },
+                          ),
+                        ),
+                      );
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      child: DogCard(
+                        dog: dog,
+                        isSaved: true,
+                        onSavePressed: () {
+                          context
+                              .read<DogScreenBloc>()
+                              .add(RemoveDogDetails(dog.id));
+                        },
+                      ),
+                    ),
+                  );
+                },
+              ),
+            );
+          }
 
-        return const SizedBox.shrink();
-      },
-    );
-  }
-}
+          if (state is DogScreenError) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.error_outline,
+                    size: 64,
+                    color: Colors.red.shade400,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Error loading saved dogs',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          color: Colors.red.shade400,
+                        ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    state.message,
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton.icon(
+                    onPressed: () {
+                      context.read<DogScreenBloc>().add(LoadSavedDogs());
+                    },
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('Try Again'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.primaryColor,
+                      foregroundColor: Colors.white,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }
 
-class WalksTab extends StatelessWidget {
-  const WalksTab({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Text(
-        'Save Walks',
-        style: TextStyle(fontSize: 24),
+          return const SizedBox.shrink();
+        },
       ),
     );
   }

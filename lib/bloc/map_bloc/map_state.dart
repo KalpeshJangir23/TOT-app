@@ -1,4 +1,3 @@
-
 import 'package:latlong2/latlong.dart';
 import 'package:tot_app/data/model/journey_model.dart';
 
@@ -9,8 +8,8 @@ class LocationState {
   final List<LatLng> routeCoordinates;
   final bool isTracking;
   final bool isPaused;
-  final Journey? journey;
   final String? error;
+  final Journey? journey;
   final DateTime? startTime;
   final Duration duration;
 
@@ -21,8 +20,8 @@ class LocationState {
     this.routeCoordinates = const [],
     this.isTracking = false,
     this.isPaused = false,
-    this.journey,
     this.error,
+    this.journey,
     this.startTime,
     this.duration = const Duration(),
   });
@@ -34,8 +33,8 @@ class LocationState {
     List<LatLng>? routeCoordinates,
     bool? isTracking,
     bool? isPaused,
-    Journey? journey,
     String? error,
+    Journey? journey,
     DateTime? startTime,
     Duration? duration,
   }) {
@@ -46,8 +45,8 @@ class LocationState {
       routeCoordinates: routeCoordinates ?? this.routeCoordinates,
       isTracking: isTracking ?? this.isTracking,
       isPaused: isPaused ?? this.isPaused,
-      journey: journey ?? this.journey,
       error: error,
+      journey: journey ?? this.journey,
       startTime: startTime ?? this.startTime,
       duration: duration ?? this.duration,
     );
