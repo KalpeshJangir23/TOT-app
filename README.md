@@ -1,16 +1,39 @@
-# tot_app
+# TOT Application
 
-A new Flutter project.
+A Flutter application for tracking dogs and their locations.
+
+## Project Structure
+
+```
+lib/
+├── bloc/               # State management
+│   ├── dog_bloc/      # Dog-related business logic
+│   └── map_bloc/      # Map-related business logic
+├── constants/         # App-wide constants and theming
+├── data/
+│   └── model/        # Data models
+├── repositories/      # Data layer handlers
+├── presentation/     
+│   └── widgets/      # UI components
+└── services/         # API and other services
+```
+###Video
+
+
+https://github.com/user-attachments/assets/4baf4be8-ea0b-4ed6-be90-5ac9420dcc2d
+
+
+
+## Features
+- Dog tracking functionality
+- Map integration
+- Journey tracking
+- Screen saving capabilities
 
 ## Getting Started
+1. Ensure Flutter is installed on your machine
+2. Clone the repository
+3. Run `flutter pub get` to install dependencies
+4. Run `flutter run` to start the application
 
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+For more details about specific features, please refer to the documentation in respective directories.
